@@ -32,13 +32,6 @@ def linkrepl(match):
     "Return new type of link"
 
     template = \
-'''Cell[BoxData[
-  TemplateBox[{{Cell[
-     TextData["Module"]],"paclet:SymbolicComputing/ref/{SYMBOL}"}},
-   "RefLink",
-   BaseStyle->{{"InlineFormula", FontFamily -> "Verdana"}}]], "InlineFormula"]'''
-
-    template = \
 '''ButtonBox["{SYMBOL}",
   BaseStyle->{{
    "Link", FontFamily -> "Courier New", FontColor -> 
@@ -70,10 +63,10 @@ sec_start = find_sec_start(legacy_help)
 
 def find_sec_title(help_str, sec_start):
     secs = collections.OrderedDict()
-    p = re.compile('"[\w\s]+"')
+    p = re.compile('"([\w\s]+)"')
     for i in range(len(sec_start) - 1):
         m = p.search(help_str, sec_start[i])
-        secs[m.group()] = help_str[sec_start[i]: sec_start[i + 1] - 1]
+        secs[m.group(1)] = help_str[sec_start[i]: sec_start[i + 1] - 1]
     
     m = p.search(help_str, sec_start[-1])
     secs[m.group()] = help_str[sec_start[-1]: - 1]
@@ -142,6 +135,7 @@ def generate_func_help(func_desc):
 
 generate_func_help(func_desc)
 
+print(secs['About the Package'])
 
 # # Separate the entire help to Cell-based blocks.
 # re.finditer('Cell[CellGroupData\[{\n\nCell["\<\\n(\w+?).+?\],\n', legacy_help_mod, re.DOTALL)
