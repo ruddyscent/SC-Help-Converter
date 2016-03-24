@@ -45,35 +45,31 @@ p_link = re.compile('ButtonBox\["(\w+?)",[\sA-Za-z]+?->".+?\]', re.DOTALL)
 # legacy_help = re.sub('ButtonBox\["(.+?)\".*?\]', linkrepl, legacy_help, re.DOTALL)
 
 # Split sections.
-def find_sec_start(help_str):
-    secs = []
-    p = re.compile('Cell\[CellGroupData')
-
-    m = re.finditer('"Section",', help_str, re.DOTALL)
-    begin = 0
-    for i in m:
-        end = i.span()[0]
-        m1 = p.search(help_str, begin, end)
-        secs.append(m1.span()[0])
-        begin = i.span()[1]
-        
-    return secs
-    
-sec_start = find_sec_start(legacy_help)
-
-def find_sec_title(help_str, sec_start):
+def split_sec(help_str):
     secs = collections.OrderedDict()
-    p = re.compile('"([\w\s]+)"')
-    for i in range(len(sec_start) - 1):
-        m = p.search(help_str, sec_start[i])
-        secs[m.group(1)] = help_str[sec_start[i]: sec_start[i + 1] - 1]
     
-    m = p.search(help_str, sec_start[-1])
-    secs[m.group()] = help_str[sec_start[-1]: - 1]
+    p_sec_bgn = re.compile('Cell\[CellGroupData')
+    p_sec_title = re.compile('"(.+)?", "Section"')
+
+    m_sec_title = list(p_sec_title.finditer(help_str))
+
+    for i in range(len(m_sec_title)):
+        m_bgn = p_sec_bgn.search(help_str, 
+                                   m_sec_title[i].span()[0] - 100)
+        bgn = m_bgn.span()[0]
+
+        if i == len(m_sec_title) - 1:
+            end = -1
+        else:
+            m_end = p_sec_bgn.search(help_str, 
+                                       m_sec_title[i+1].span()[0] - 100)
+            end = m_end.span()[0]
+            
+        secs[m_sec_title[i].group(1)] = help_str[bgn:end]
     
     return secs
-
-secs = find_sec_title(legacy_help, sec_start)
+    
+secs = split_sec(legacy_help)
 
 def parse_func_idx(help_str):
     subsec = collections.OrderedDict()
@@ -81,19 +77,19 @@ def parse_func_idx(help_str):
     p_func = re.compile('ButtonBox\["(.+)"')
     m_subsec = list(p_subsec.finditer(help_str))
     for i in range(len(m_subsec) - 1):
-        begin = m_subsec[i].span()[1]
+        bgn = m_subsec[i].span()[1]
         end = m_subsec[i+1].span()[0]
-        m_func = p_func.findall(help_str, begin, end)
+        m_func = p_func.findall(help_str, bgn, end)
         subsec[m_subsec[i].group(1)] = m_func
 
-    begin = m_subsec[-1].span()[1]
-    end = begin + re.search('"Section"', help_str[begin:]).span()[0]
-    m_func = p_func.findall(help_str, begin, end)
+    bgn = m_subsec[-1].span()[1]
+    end = -1 # bgn + re.search('"Section"', help_str[bgn:]).span()[0]
+    m_func = p_func.findall(help_str, bgn, end)
     subsec[m_subsec[-1].group(1)] = m_func
 
     return subsec
 
-secs['"Index of Functions"'] = parse_func_idx(secs['"Index of Functions"'])
+secs['Index of Functions'] = parse_func_idx(secs['Index of Functions'])
 
 def parse_func_desc(help_str):
     func_desc = {}
@@ -117,7 +113,7 @@ def parse_func_desc(help_str):
 
     return func_desc
 
-func_desc = parse_func_desc(legacy_help)
+secs['Variables and Macros'] = parse_func_desc(secs['Variables and Macros'])
 
 def generate_func_help(func_desc):
     for item in func_desc.items():
@@ -133,9 +129,9 @@ def generate_func_help(func_desc):
             with open(fname, 'w') as f:
                 f.write(item[1])
 
-generate_func_help(func_desc)
+generate_func_help(secs['Variables and Macros'])
 
-print(secs['About the Package'])
+# print(secs['About the Package'])
 
 # # Separate the entire help to Cell-based blocks.
 # re.finditer('Cell[CellGroupData\[{\n\nCell["\<\\n(\w+?).+?\],\n', legacy_help_mod, re.DOTALL)
@@ -151,20 +147,75 @@ print(secs['About the Package'])
 # for i in m:
 #     print(i.group())
 
-# Generate a preamble file.
-fname = os.path.join(doc_en, 'Guides', 'Preambles.nb')
-end_idx = 0
+# Generate a function category from BrowserCategories.m
+def parse_category(cat_str):
+    cat = collections.OrderedDict()
 
-for i, line in enumerate(legacy_help):
-    if 'Variables and Macros' in line:
-        end_idx = i - 3
-        break
+    m_start = re.search('Item\[Delimiter\],', cat_str)
+    cat_str = cat_str[m_start.span()[1]:]
+    m_cat = list(re.finditer('BrowserCategory\["(.+)",', cat_str))
+
+    p = re.compile('Item\["(.+)",')
+    for i in range(len(m_cat)):
+        bgn = m_cat[i].span()[1]
+        if i == len(m_cat) - 1:
+            end = len(cat_str)
+        else:
+            end = m_cat[i+1].span()[0]
+
+        cat[m_cat[i].group(1)] = p.findall(cat_str, bgn, end)
+        
+    return cat
+
+fname = os.path.join(doc_en, 'BrowserCategories.m')
+with open(fname) as f:
+    cat_str = f.read()
+cat = parse_category(cat_str)
+
+def gen_func_lst_cell(func_lst):
+    header = 'Cell[TextData[{'
+    footer = '}], "Text"]'
+    sep = \
+''',
+ "\[NonBreakingSpace]",
+ StyleBox["\[MediumSpace]\[FilledVerySmallSquare]\[MediumSpace]"],
+ " ",
+'''
+    template = \
+'''ButtonBox["{SYMBOL}",
+  BaseStyle->{{
+   "Link", FontFamily -> "Courier New", FontColor -> 
+    RGBColor[0.269993, 0.308507, 0.6]}},
+  ButtonData->"paclet:SymbolicComputing/ref/{SYMBOL}"]
+'''
+    data = [template.format(SYMBOL=f) for f in func_lst]
+    cell = header + sep.join(data) + footer
+
+    return cell
+
+# Generate a guide file.
+fname = os.path.join(doc_en, 'Guides', 'SymbolicComputingPackage.nb')
 
 with open(fname, 'w') as f:
-    for i in range(end_idx - 1):
-        f.write(legacy_help[i])
+    f.write('Notebook[{\n')
+    f.write(secs['About the Package'])
+    f.write(secs['Author'])
+    f.write(secs['Copyright'])
+    f.write(secs['Disclaimer'])
+    f.write(secs['Distribution Policy'])
+    f.write(secs['Version Compatibility'])
+    f.write(secs['How to Start'])
+    
+    f.write('Cell[CellGroupData[{')
+    f.write('Cell["Functions", "Section"],')
 
-    f.write(legacy_help[end_idx - 1][0:-2])
+    for k in cat:
+        f.write('Cell["{}", "Subsection"],'.format(k))
+        f.write(gen_func_lst_cell(cat[k]))
+        if k != 'W': f.write(',')
+
+    f.write('}, Open  ]]')
+
     f.write('}]')
 
 # contents = {}
@@ -181,13 +232,12 @@ template = \
             Language -> "English", 
             LinkBase -> "SymbolicComputing",
             Resources -> {{
-                "Guides/Preambles"
+                "Guides/SymbolicComputingPackage"
       	        }}
             }}
     }}
 ]
 '''
-
 
 with open(os.path.join(base, 'PacletInfo.m'), 'w') as f:
     f.write(template.format(NAME=name, VER=ver))
