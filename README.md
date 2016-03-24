@@ -8,12 +8,20 @@ It seems that Wolfram Research wants to deprecate the 'Help Browser'. On Linux, 
 
 This script converts the user documentation of SCPM to the new 'Documentation Center' style.
 
-# Usage
-Before execute this script, you need to install SCPM properly. Please, follow instructions on http://symbcomp.gist.ac.kr/. Then, execute the following script.
+## Usage
+SC-Help-Converter was written in Python3. Though you can use any Python3 interpreter, I recommend using Anaconda from Continuum Analytics.
+
+Before executing this script, you need to install SCPM properly. Please, follow instructions on http://symbcomp.gist.ac.kr/. Then, run the following script.
 ```bash
 python converter.py
 ```
 
+## TODOs
+ * Prevent opening a new window when the link clicked.
+ * Enable the F1 keyboard shortcut.
+ * Connect the 'Help' link at the upper right corner of the palette.
+ * Apply the 'Document Center' stylesheet.
+ 
 ## License
 This conversion script follows GPLv3. SCPM follows its own license.
 
