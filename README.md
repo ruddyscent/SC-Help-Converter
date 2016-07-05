@@ -1,6 +1,6 @@
 # SC-Help-Converter
 
-Help Migration Script of 'Symbolic Computing Package for Mathematica.'
+Help Migration Script of 'Symbolic Computing Package for Mathematica.' for Mathematica 9 and above
 
 Symbolic Computing Package for Mathematica (SCPM) is a third party package for Wolfram Mathematica. SCPM has a homepage, http://symbcomp.gist.ac.kr/ and you can find the download and installation instructions. It provides a quite complete set of functions to manupulate and evaluate equations. Though SCPM provides a good user documents, it uses the old-styled help platform which is called a 'Help Browser.' 
 
@@ -21,7 +21,6 @@ python converter.py
  * Enable the F1 keyboard shortcut.
  * Connect the 'Help' link at the upper right corner of the palette.
  * Apply the 'Document Center' stylesheet.
- * Remove the file extension at the window title bar.
  * Enable folder button of a cell.
  
 ## License
