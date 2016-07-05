@@ -64,3 +64,6 @@ target/
 # Editor temporary file
 *~
 *#
+
+# Sample files
+samples
