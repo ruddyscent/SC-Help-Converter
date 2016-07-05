@@ -21,6 +21,8 @@ python converter.py
  * Enable the F1 keyboard shortcut.
  * Connect the 'Help' link at the upper right corner of the palette.
  * Apply the 'Document Center' stylesheet.
+ * Remove the file extension at the window title bar.
+ * Enable folder button of a cell.
  
 ## License
 This conversion script follows GPLv3. SCPM follows its own license.

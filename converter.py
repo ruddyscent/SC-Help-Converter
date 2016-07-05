@@ -3,6 +3,7 @@
 import os
 import re
 import collections
+import glob
 
 name = '"Symbolic Computing Package for Mathematica"'
 ver = '"3.1.2016.1.27"'
@@ -19,6 +20,7 @@ for p in newpath:
     if not os.path.exists(p):
         os.makedirs(p)
 
+# Start process the legacy help file.
 with open(help, 'r') as f:
     legacy_help = f.read()
 
@@ -218,9 +220,14 @@ with open(fname, 'w') as f:
 
     f.write('}]')
 
-# contents = {}
-# # '"ReferencePages/Symbols/AFunction"'
+# List up reference pages
+ref_path = os.path.join(doc_en, 'ReferencePages', 'Symbols', '*')
+ref_lst = glob.glob(ref_path)
+ref_pat = re.compile('.+(ReferencePages.+)\.nb')
+ref_lst = [ref_pat.search(i).group(1) for i in ref_lst]
+ref_str = '"' + '",\n                "'.join(ref_lst) + '"'
 
+# Generate PacletInfo.m
 template = \
 '''Paclet[
     Name -> {NAME},
@@ -228,11 +235,24 @@ template = \
     MathematicaVersion -> "8+",
     Extensions -> {{
         {{
+            "Application",
+            Root -> "SymbolicComputing",
+            Context -> "SymbolicComputing`"
+                }},
+        {{
             "Documentation",
             Language -> "English", 
             LinkBase -> "SymbolicComputing",
             Resources -> {{
                 "Guides/SymbolicComputingPackage"
+      	        }}
+            }},
+        {{
+            "Documentation",
+            Language -> "English", 
+            LinkBase -> "SymbolicComputing",
+            Resources -> {{
+                {REFERENCE}
       	        }}
             }}
     }}
@@ -240,5 +260,5 @@ template = \
 '''
 
 with open(os.path.join(base, 'PacletInfo.m'), 'w') as f:
-    f.write(template.format(NAME=name, VER=ver))
+    f.write(template.format(NAME=name, VER=ver, REFERENCE=ref_str))
     
