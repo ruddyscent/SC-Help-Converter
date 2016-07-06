@@ -22,6 +22,7 @@ python converter.py
  * Connect the 'Help' link at the upper right corner of the palette.
  * Apply the 'Document Center' stylesheet.
  * Enable folder button of a cell.
+ * Fix broken links to SC functions at 'See Also' section.
  
 ## License
 This conversion script follows GPLv3. SCPM follows its own license.

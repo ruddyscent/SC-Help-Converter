@@ -94,6 +94,12 @@ def parse_func_idx(help_str):
 secs['Index of Functions'] = parse_func_idx(secs['Index of Functions'])
 
 def closing(title):
+    name = None
+    if title[0] == '\\':
+        name = title[4:-4].split('\n')[1]
+    else:
+        name = title
+
     former='''ScreenStyleEnvironment->"Working",
 WindowTitle->"'''
     latter='''",
@@ -115,7 +121,7 @@ StyleDefinitions->Notebook[{
    Cell[
     StyleData["Input"], CellContext -> "Global`"]}, Visible -> False, 
     StyleDefinitions -> "PrivateStylesheetFormatting.nb"]'''
-    return ''.join([former, title, latter])
+    return ''.join([former, name, latter])
 
 def parse_func_desc(help_str):
     func_desc = {}
